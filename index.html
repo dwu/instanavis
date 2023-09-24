@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Instana Trace Visualizer</title>
+    <script src="js/vis-timeline-graph2d.min.js"></script>
+    <script src="js/dot-object.min.js"></script>
+    <script src="data.js"></script>
+    <style>
+      body, html {
+        font-family: sans-serif;
+      }
+      div#spandata {
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-left: 3px solid #ffc200;
+        color: #282828;
+        page-break-inside: avoid;
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        margin-bottom: 1.6em;
+        max-width: 100%;
+        overflow: auto;
+        padding: 1em 1.5em;
+        display: block;
+        word-wrap: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Upload Instana trace file (.json): <input type="file" id="fileselector"></input></p>
+    <p>Trace:<br><div id="timeline"></div></p>
+    <p>Span data:<br><div id="spandata"></div></p>
+    <script>
+      function createDataSetForSpan(span, level, items, groups) {
+        // create group for current level
+        if (groups.get(level) == null) {
+          groups.add({
+            id: level,
+            content: level
+          });
+        }
+
+        // format properties in dotted notation
+        let data = DotObject.dot(span.data);
+        data["name"] = span.name;
+        data["label"] = span.label;
+        data["duration"] = span.duration + "ms";
+        data["duration_self"] = span.calculatedSelfTime + "ms";
+
+        items.add({
+          id: span.id,
+          group: level,
+          content: `${span.label} (${span.name})`,
+          title: JSON.stringify(data, null, 2).replace(/\n/g, "<br>"),
+          start: span.start,
+          end: span.start+span.duration
+        });
+        for (let childSpan of span.childSpans) {
+          createDataSetForSpan(childSpan, level+1, items, groups);
+        }
+      }
+
+      function createDataSet(trace) {
+        let items = new vis.DataSet();
+        let groups = new vis.DataSet();
+        createDataSetForSpan(trace.rootSpan, 0, items, groups);
+        return {items, groups};
+      }
+
+      var timeline;
+      var dataset;
+
+      const timelineContainer = document.getElementById("timeline");
+      const fileSelector = document.getElementById("fileselector");
+      const spanData = document.getElementById("spandata");
+
+      timelineContainer.addEventListener("click", (event) => {
+        let props = timeline.getEventProperties(event)
+        if (props.item != null) {
+          spanData.innerHTML = dataset.items.get(props.item).title;
+        } else {
+          spanData.innerHTML = "";
+        }
+      });
+      fileSelector.addEventListener("change", (event) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", (event) => {
+          let dataJson = JSON.parse(event.target.result);
+          dataset = createDataSet(dataJson);
+          timeline = new vis.Timeline(timelineContainer, dataset.items, { "orientation": "top" });
+          timeline.setGroups(dataset.groups);
+        });
+        reader.readAsText(event.target.files[0])
+      });
+    </script>
+  </body>
+</html>
