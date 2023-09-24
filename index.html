@@ -4,7 +4,6 @@
     <title>Instana Trace Visualizer</title>
     <script src="js/vis-timeline-graph2d.min.js"></script>
     <script src="js/dot-object.min.js"></script>
-    <script src="data.js"></script>
     <style>
       body, html {
         font-family: sans-serif;
@@ -25,6 +24,10 @@
         display: block;
         word-wrap: break-word;
       }
+      .vis-item.parent {
+        border-color: green;
+        background-color: lightgreen;
+      }
     </style>
   </head>
   <body>
@@ -32,7 +35,7 @@
     <p>Trace:<br><div id="timeline"></div></p>
     <p>Span data:<br><div id="spandata"></div></p>
     <script>
-      function createDataSetForSpan(span, level, items, groups) {
+      function createDataSetForSpan(span, level, items, groups, parents) {
         // create group for current level
         if (groups.get(level) == null) {
           groups.add({
@@ -41,12 +44,19 @@
           });
         }
 
+        // store parent information
+        if (span.parentId != "") {
+          parents[span.id] = span.parentId;
+        }
+
         // format properties in dotted notation
         let data = DotObject.dot(span.data);
+        data["id"] = span.id;
         data["name"] = span.name;
         data["label"] = span.label;
         data["duration"] = span.duration + "ms";
         data["duration_self"] = span.calculatedSelfTime + "ms";
+        data["parentid"] = span.parentId;
 
         items.add({
           id: span.id,
@@ -57,15 +67,32 @@
           end: span.start+span.duration
         });
         for (let childSpan of span.childSpans) {
-          createDataSetForSpan(childSpan, level+1, items, groups);
+          createDataSetForSpan(childSpan, level+1, items, groups, parents);
         }
       }
 
       function createDataSet(trace) {
         let items = new vis.DataSet();
         let groups = new vis.DataSet();
-        createDataSetForSpan(trace.rootSpan, 0, items, groups);
-        return {items, groups};
+        let parents = {};
+
+        createDataSetForSpan(trace.rootSpan, 0, items, groups, parents);
+
+        return {items, groups, parents};
+      }
+
+      function getParents(spanid, dataset) {
+        let result = [];
+        for (;;) {
+          if (spanid in dataset.parents) {
+            let parentid = dataset.parents[spanid];
+            result.push(dataset.items.get(parentid));
+            spanid = parentid;
+          } else {
+            break;
+          }
+        }
+        return result;
       }
 
       var timeline;
@@ -75,14 +102,31 @@
       const fileSelector = document.getElementById("fileselector");
       const spanData = document.getElementById("spandata");
 
+      // timeline element clicked
       timelineContainer.addEventListener("click", (event) => {
         let props = timeline.getEventProperties(event)
+
+        // remove all parent highlights
+        dataset.items.forEach((item) => {
+          dataset.items.updateOnly({id: item.id, className: null});
+        });
+
         if (props.item != null) {
-          spanData.innerHTML = dataset.items.get(props.item).title;
+          // display span data
+          let item = dataset.items.get(props.item);
+          spanData.innerHTML = item.title;
+
+          // highlight parents
+          let parents = getParents(item.id, dataset);
+          for (let parent of parents) {
+            dataset.items.updateOnly({id: parent.id, className: "parent"});
+          }
         } else {
           spanData.innerHTML = "";
         }
       });
+
+      // file uploaded
       fileSelector.addEventListener("change", (event) => {
         const reader = new FileReader();
         reader.addEventListener("load", (event) => {
