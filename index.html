@@ -149,6 +149,7 @@
       fileSelector.addEventListener("change", (event) => {
         const reader = new FileReader();
         reader.addEventListener("load", (event) => {
+          timelineContainer.innerHTML = "";
           let dataJson = JSON.parse(event.target.result);
           dataset = createDataSet(dataJson);
           timeline = new vis.Timeline(timelineContainer, dataset.items, { "orientation": "top" });
