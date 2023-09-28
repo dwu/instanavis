@@ -65,13 +65,21 @@
         items.add({
           id: span.id,
           group: level,
-          content: `${span.label} (${span.name})`,
+          content: `${getIcon(span)}${span.label} (${span.name})`,
           title: JSON.stringify(data, null, 2).replace(/\n/g, "<br>"),
           start: span.start,
           end: span.start+span.duration
         });
         for (let childSpan of span.childSpans) {
           createDataSetForSpan(childSpan, level+1, items, groups, parents, childs);
+        }
+      }
+
+      function getIcon(span) {
+        if ("http" in span.data) {
+          return "<img src=\"images/net.png\"> ";
+        } else {
+          return ""
         }
       }
 
@@ -101,7 +109,6 @@
       }
 
       function getChilds(spanid, dataset, childs) {
-        console.log(spanid);
         for (let cid of dataset.childs[spanid]) {
           childs.push(dataset.items.get(cid));
           getChilds(cid, dataset, childs);
@@ -137,8 +144,8 @@
           let childs = [];
           getChilds(item.id, dataset, childs);
           for (let child of childs) {
-            console.log(child);
             dataset.items.updateOnly({id: child.id, className: "hi"});
+            dataset.items.updateOnly({id: child.id, style: "color: red;"});
           }
         } else {
           spanData.innerHTML = "";
@@ -152,7 +159,13 @@
           timelineContainer.innerHTML = "";
           let dataJson = JSON.parse(event.target.result);
           dataset = createDataSet(dataJson);
-          timeline = new vis.Timeline(timelineContainer, dataset.items, { "orientation": "top" });
+          timeline = new vis.Timeline(
+            timelineContainer,
+            dataset.items,
+            {
+              "orientation": "top",
+              "xss": { "disabled": true }
+            });
           timeline.setGroups(dataset.groups);
         });
         reader.readAsText(event.target.files[0])
