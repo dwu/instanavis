@@ -10,10 +10,10 @@
       }
       div#spandata {
         background: #f8f8f8;
-        border: 1px solid #ddd;
         border-left: 3px solid #ffc200;
+        border: 1px solid #ddd;
         color: #282828;
-        page-break-inside: avoid;
+        display: block;
         font-family: monospace;
         font-size: 12px;
         line-height: 1.6;
@@ -21,12 +21,12 @@
         max-width: 100%;
         overflow: auto;
         padding: 1em 1.5em;
-        display: block;
+        page-break-inside: avoid;
         word-wrap: break-word;
       }
-      .vis-item.parent {
-        border-color: green;
-        background-color: lightgreen;
+      .vis-item.hi {
+        background-color: #fff785;
+        border-color: #ffc200;
       }
     </style>
   </head>
@@ -35,7 +35,7 @@
     <p>Trace:<br><div id="timeline"></div></p>
     <p>Span data:<br><div id="spandata"></div></p>
     <script>
-      function createDataSetForSpan(span, level, items, groups, parents) {
+      function createDataSetForSpan(span, level, items, groups, parents, childs) {
         // create group for current level
         if (groups.get(level) == null) {
           groups.add({
@@ -49,6 +49,9 @@
           parents[span.id] = span.parentId;
         }
 
+        // store child information
+        childs[span.id] = span.childSpans.map((s) => s.id);
+
         // format properties in dotted notation
         let data = DotObject.dot(span.data);
         data["id"] = span.id;
@@ -57,6 +60,7 @@
         data["duration"] = span.duration + "ms";
         data["duration_self"] = span.calculatedSelfTime + "ms";
         data["parentid"] = span.parentId;
+        data["childids"] = span.childSpans.map((s) => s.id);
 
         items.add({
           id: span.id,
@@ -67,7 +71,7 @@
           end: span.start+span.duration
         });
         for (let childSpan of span.childSpans) {
-          createDataSetForSpan(childSpan, level+1, items, groups, parents);
+          createDataSetForSpan(childSpan, level+1, items, groups, parents, childs);
         }
       }
 
@@ -75,10 +79,11 @@
         let items = new vis.DataSet();
         let groups = new vis.DataSet();
         let parents = {};
+        let childs = {};
 
-        createDataSetForSpan(trace.rootSpan, 0, items, groups, parents);
+        createDataSetForSpan(trace.rootSpan, 0, items, groups, parents, childs);
 
-        return {items, groups, parents};
+        return {items, groups, parents, childs};
       }
 
       function getParents(spanid, dataset) {
@@ -93,6 +98,14 @@
           }
         }
         return result;
+      }
+
+      function getChilds(spanid, dataset, childs) {
+        console.log(spanid);
+        for (let cid of dataset.childs[spanid]) {
+          childs.push(dataset.items.get(cid));
+          getChilds(cid, dataset, childs);
+        }
       }
 
       var timeline;
@@ -116,10 +129,16 @@
           let item = dataset.items.get(props.item);
           spanData.innerHTML = item.title;
 
-          // highlight parents
+          // highlight parents and childs
           let parents = getParents(item.id, dataset);
           for (let parent of parents) {
-            dataset.items.updateOnly({id: parent.id, className: "parent"});
+            dataset.items.updateOnly({id: parent.id, className: "hi"});
+          }
+          let childs = [];
+          getChilds(item.id, dataset, childs);
+          for (let child of childs) {
+            console.log(child);
+            dataset.items.updateOnly({id: child.id, className: "hi"});
           }
         } else {
           spanData.innerHTML = "";
