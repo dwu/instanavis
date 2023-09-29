@@ -1,0 +1,29 @@
+body, html {
+    font-family: sans-serif;
+}
+div#spandata {
+    background: #f8f8f8;
+    border-left: 3px solid #ffc200;
+    border: 1px solid #ddd;
+    color: #282828;
+    display: block;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 1.6em;
+    max-width: 100%;
+    overflow: auto;
+    padding: 1em 1.5em;
+    page-break-inside: avoid;
+    word-wrap: break-word;
+}
+.vis-item.hi {
+    background-color: #fff785;
+    border-color: #ffc200;
+}
+footer {
+    text-align: right;
+    color: #ddd;
+    font-style: italic;
+    font-size: 0.8em;
+}
