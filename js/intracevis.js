@@ -49,7 +49,7 @@ function createDataSet(trace) {
   return {items, groups, parents, childs};
 }
 
-function getParents(spanid, dataset) {
+function getParents(dataset, spanid) {
   let result = [];
   for (;;) {
     if (spanid in dataset.parents) {
@@ -63,10 +63,10 @@ function getParents(spanid, dataset) {
   return result;
 }
 
-function getChilds(spanid, dataset, childs) {
+function getChilds(dataset, spanid, childs) {
   for (let cid of dataset.childs[spanid]) {
     childs.push(dataset.items.get(cid));
-    getChilds(cid, dataset, childs);
+    getChilds(dataset, cid, childs);
   }
 }
 
@@ -92,15 +92,14 @@ timelineContainer.addEventListener("click", (event) => {
     spanData.innerHTML = item.title;
 
     // highlight parents and childs
-    let parents = getParents(item.id, dataset);
+    let parents = getParents(dataset, item.id);
     for (let parent of parents) {
       dataset.items.updateOnly({id: parent.id, className: "hi"});
     }
     let childs = [];
-    getChilds(item.id, dataset, childs);
+    getChilds(dataset, item.id, childs);
     for (let child of childs) {
       dataset.items.updateOnly({id: child.id, className: "hi"});
-      dataset.items.updateOnly({id: child.id, style: "color: red;"});
     }
   } else {
     spanData.innerHTML = "";
