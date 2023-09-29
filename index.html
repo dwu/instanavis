@@ -1,182 +1,182 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Instana Trace Visualizer</title>
-    <script src="js/vis-timeline-graph2d.min.js"></script>
-    <script src="js/dot-object.min.js"></script>
-    <style>
-      body, html {
-        font-family: sans-serif;
-      }
-      div#spandata {
-        background: #f8f8f8;
-        border-left: 3px solid #ffc200;
-        border: 1px solid #ddd;
-        color: #282828;
-        display: block;
-        font-family: monospace;
-        font-size: 12px;
-        line-height: 1.6;
-        margin-bottom: 1.6em;
-        max-width: 100%;
-        overflow: auto;
-        padding: 1em 1.5em;
-        page-break-inside: avoid;
-        word-wrap: break-word;
-      }
-      .vis-item.hi {
-        background-color: #fff785;
-        border-color: #ffc200;
-      }
-     footer {
-         text-align: right;
-         color: #ddd;
-         font-style: italic;
-         font-size: 0.8em;
-     }
-    </style>
-  </head>
-  <body>
-    <p>Upload Instana trace file (.json): <input type="file" id="fileselector"></input></p>
-    <p>Trace:<br><div id="timeline"></div></p>
-    <p>Span data:<br><div id="spandata"></div></p>
-    <footer>Last modified: %%%LAST_MODIFIED%%%</footer>
-    <script>
-      function createDataSetForSpan(span, level, items, groups, parents, childs) {
-        // create group for current level
-        if (groups.get(level) == null) {
-          groups.add({
-            id: level,
-            content: level
-          });
-        }
+    <head>
+        <title>Instana Trace Visualizer</title>
+        <script src="js/vis-timeline-graph2d.min.js"></script>
+        <script src="js/dot-object.min.js"></script>
+        <style>
+         body, html {
+             font-family: sans-serif;
+         }
+         div#spandata {
+             background: #f8f8f8;
+             border-left: 3px solid #ffc200;
+             border: 1px solid #ddd;
+             color: #282828;
+             display: block;
+             font-family: monospace;
+             font-size: 12px;
+             line-height: 1.6;
+             margin-bottom: 1.6em;
+             max-width: 100%;
+             overflow: auto;
+             padding: 1em 1.5em;
+             page-break-inside: avoid;
+             word-wrap: break-word;
+         }
+         .vis-item.hi {
+             background-color: #fff785;
+             border-color: #ffc200;
+         }
+         footer {
+             text-align: right;
+             color: #ddd;
+             font-style: italic;
+             font-size: 0.8em;
+         }
+        </style>
+    </head>
+    <body>
+        <p>Upload Instana trace file (.json): <input type="file" id="fileselector"></input></p>
+        <p>Trace:<br><div id="timeline"></div></p>
+        <p>Span data:<br><div id="spandata"></div></p>
+        <footer>Last modified: %%%LAST_MODIFIED%%%</footer>
+        <script>
+         function createDataSetForSpan(span, level, items, groups, parents, childs) {
+             // create group for current level
+             if (groups.get(level) == null) {
+                 groups.add({
+                     id: level,
+                     content: level
+                 });
+             }
 
-        // store parent information
-        if (span.parentId != "") {
-          parents[span.id] = span.parentId;
-        }
+             // store parent information
+             if (span.parentId != "") {
+                 parents[span.id] = span.parentId;
+             }
 
-        // store child information
-        childs[span.id] = span.childSpans.map((s) => s.id);
+             // store child information
+             childs[span.id] = span.childSpans.map((s) => s.id);
 
-        // format properties in dotted notation
-        let data = DotObject.dot(span.data);
-        data["id"] = span.id;
-        data["name"] = span.name;
-        data["label"] = span.label;
-        data["duration"] = span.duration + "ms";
-        data["duration_self"] = span.calculatedSelfTime + "ms";
-        data["parentid"] = span.parentId;
-        data["childids"] = span.childSpans.map((s) => s.id);
+             // format properties in dotted notation
+             let data = DotObject.dot(span.data);
+             data["id"] = span.id;
+             data["name"] = span.name;
+             data["label"] = span.label;
+             data["duration"] = span.duration + "ms";
+             data["duration_self"] = span.calculatedSelfTime + "ms";
+             data["parentid"] = span.parentId;
+             data["childids"] = span.childSpans.map((s) => s.id);
 
-        items.add({
-          id: span.id,
-          group: level,
-          content: `${getIcon(span)}${span.label} (${span.name})`,
-          title: JSON.stringify(data, null, 2).replace(/\n/g, "<br>"),
-          start: span.start,
-          end: span.start+span.duration
-        });
-        for (let childSpan of span.childSpans) {
-          createDataSetForSpan(childSpan, level+1, items, groups, parents, childs);
-        }
-      }
+             items.add({
+                 id: span.id,
+                 group: level,
+                 content: `${getIcon(span)}${span.label} (${span.name})`,
+                 title: JSON.stringify(data, null, 2).replace(/\n/g, "<br>"),
+                 start: span.start,
+                 end: span.start+span.duration
+             });
+             for (let childSpan of span.childSpans) {
+                 createDataSetForSpan(childSpan, level+1, items, groups, parents, childs);
+             }
+         }
 
-      function getIcon(span) {
-        if ("http" in span.data) {
-          return "<img src=\"images/net.png\"> ";
-        } else {
-          return ""
-        }
-      }
+         function getIcon(span) {
+             if ("http" in span.data) {
+                 return "<img src=\"images/net.png\"> ";
+             } else {
+                 return ""
+             }
+         }
 
-      function createDataSet(trace) {
-        let items = new vis.DataSet();
-        let groups = new vis.DataSet();
-        let parents = {};
-        let childs = {};
+         function createDataSet(trace) {
+             let items = new vis.DataSet();
+             let groups = new vis.DataSet();
+             let parents = {};
+             let childs = {};
 
-        createDataSetForSpan(trace.rootSpan, 0, items, groups, parents, childs);
+             createDataSetForSpan(trace.rootSpan, 0, items, groups, parents, childs);
 
-        return {items, groups, parents, childs};
-      }
+             return {items, groups, parents, childs};
+         }
 
-      function getParents(spanid, dataset) {
-        let result = [];
-        for (;;) {
-          if (spanid in dataset.parents) {
-            let parentid = dataset.parents[spanid];
-            result.push(dataset.items.get(parentid));
-            spanid = parentid;
-          } else {
-            break;
-          }
-        }
-        return result;
-      }
+         function getParents(spanid, dataset) {
+             let result = [];
+             for (;;) {
+                 if (spanid in dataset.parents) {
+                     let parentid = dataset.parents[spanid];
+                     result.push(dataset.items.get(parentid));
+                     spanid = parentid;
+                 } else {
+                     break;
+                 }
+             }
+             return result;
+         }
 
-      function getChilds(spanid, dataset, childs) {
-        for (let cid of dataset.childs[spanid]) {
-          childs.push(dataset.items.get(cid));
-          getChilds(cid, dataset, childs);
-        }
-      }
+         function getChilds(spanid, dataset, childs) {
+             for (let cid of dataset.childs[spanid]) {
+                 childs.push(dataset.items.get(cid));
+                 getChilds(cid, dataset, childs);
+             }
+         }
 
-      var timeline;
-      var dataset;
+         var timeline;
+         var dataset;
 
-      const timelineContainer = document.getElementById("timeline");
-      const fileSelector = document.getElementById("fileselector");
-      const spanData = document.getElementById("spandata");
+         const timelineContainer = document.getElementById("timeline");
+         const fileSelector = document.getElementById("fileselector");
+         const spanData = document.getElementById("spandata");
 
-      // timeline element clicked
-      timelineContainer.addEventListener("click", (event) => {
-        let props = timeline.getEventProperties(event)
+         // timeline element clicked
+         timelineContainer.addEventListener("click", (event) => {
+             let props = timeline.getEventProperties(event)
 
-        // remove all parent highlights
-        dataset.items.forEach((item) => {
-          dataset.items.updateOnly({id: item.id, className: null});
-        });
+             // remove all parent highlights
+             dataset.items.forEach((item) => {
+                 dataset.items.updateOnly({id: item.id, className: null});
+             });
 
-        if (props.item != null) {
-          // display span data
-          let item = dataset.items.get(props.item);
-          spanData.innerHTML = item.title;
+             if (props.item != null) {
+                 // display span data
+                 let item = dataset.items.get(props.item);
+                 spanData.innerHTML = item.title;
 
-          // highlight parents and childs
-          let parents = getParents(item.id, dataset);
-          for (let parent of parents) {
-            dataset.items.updateOnly({id: parent.id, className: "hi"});
-          }
-          let childs = [];
-          getChilds(item.id, dataset, childs);
-          for (let child of childs) {
-            dataset.items.updateOnly({id: child.id, className: "hi"});
-            dataset.items.updateOnly({id: child.id, style: "color: red;"});
-          }
-        } else {
-          spanData.innerHTML = "";
-        }
-      });
+                 // highlight parents and childs
+                 let parents = getParents(item.id, dataset);
+                 for (let parent of parents) {
+                     dataset.items.updateOnly({id: parent.id, className: "hi"});
+                 }
+                 let childs = [];
+                 getChilds(item.id, dataset, childs);
+                 for (let child of childs) {
+                     dataset.items.updateOnly({id: child.id, className: "hi"});
+                     dataset.items.updateOnly({id: child.id, style: "color: red;"});
+                 }
+             } else {
+                 spanData.innerHTML = "";
+             }
+         });
 
-      // file uploaded
-      fileSelector.addEventListener("change", (event) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", (event) => {
-          timelineContainer.innerHTML = "";
-          let dataJson = JSON.parse(event.target.result);
-          dataset = createDataSet(dataJson);
-          timeline = new vis.Timeline(
-            timelineContainer,
-            dataset.items,
-            {
-              "orientation": "top",
-              "xss": { "disabled": true }
-            });
-          timeline.setGroups(dataset.groups);
-        });
-        reader.readAsText(event.target.files[0])
-      });
-    </script>
-  </body>
+         // file uploaded
+         fileSelector.addEventListener("change", (event) => {
+             const reader = new FileReader();
+             reader.addEventListener("load", (event) => {
+                 timelineContainer.innerHTML = "";
+                 let dataJson = JSON.parse(event.target.result);
+                 dataset = createDataSet(dataJson);
+                 timeline = new vis.Timeline(
+                     timelineContainer,
+                     dataset.items,
+                     {
+                         "orientation": "top",
+                         "xss": { "disabled": true }
+                 });
+                 timeline.setGroups(dataset.groups);
+             });
+             reader.readAsText(event.target.files[0])
+         });
+        </script>
+    </body>
 </html>
