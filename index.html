@@ -28,12 +28,19 @@
         background-color: #fff785;
         border-color: #ffc200;
       }
+     footer {
+         text-align: right;
+         color: #ddd;
+         font-style: italic;
+         font-size: 0.8em;
+     }
     </style>
   </head>
   <body>
     <p>Upload Instana trace file (.json): <input type="file" id="fileselector"></input></p>
     <p>Trace:<br><div id="timeline"></div></p>
     <p>Span data:<br><div id="spandata"></div></p>
+    <footer>Last modified: %%%LAST_MODIFIED%%%</footer>
     <script>
       function createDataSetForSpan(span, level, items, groups, parents, childs) {
         // create group for current level
