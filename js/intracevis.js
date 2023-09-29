@@ -16,33 +16,35 @@ function createDataSetForSpan(span, level, items, groups, parents, childs) {
   childs[span.id] = span.childSpans.map((s) => s.id);
 
   // format properties in dotted notation
-  let data = DotObject.dot(span.data);
+  const data = DotObject.dot(span.data);
   data["id"] = span.id;
   data["name"] = span.name;
   data["label"] = span.label;
   data["duration"] = span.duration + "ms";
   data["duration_self"] = span.calculatedSelfTime + "ms";
-  data["parentid"] = span.parentId;
-  data["childids"] = span.childSpans.map((s) => s.id);
 
   items.add({
     id: span.id,
     group: level,
     content: `${span.label} (${span.name})`,
-    title: JSON.stringify(data, null, 2).replace(/\n/g, "<br>"),
+    title: dataToTitle(data),
     start: span.start,
     end: span.start+span.duration
   });
-  for (let childSpan of span.childSpans) {
+  for (const childSpan of span.childSpans) {
     createDataSetForSpan(childSpan, level+1, items, groups, parents, childs);
   }
 }
 
+function dataToTitle(data) {
+  return JSON.stringify(data, null, 2).replace(/\n/g, "<br>");
+}
+
 function createDataSet(trace) {
-  let items = new vis.DataSet();
-  let groups = new vis.DataSet();
-  let parents = {};
-  let childs = {};
+  const items = new vis.DataSet();
+  const groups = new vis.DataSet();
+  const parents = {};
+  const childs = {};
 
   createDataSetForSpan(trace.rootSpan, 0, items, groups, parents, childs);
 
@@ -50,10 +52,10 @@ function createDataSet(trace) {
 }
 
 function getParents(dataset, spanid) {
-  let result = [];
+  const result = [];
   for (;;) {
     if (spanid in dataset.parents) {
-      let parentid = dataset.parents[spanid];
+      const parentid = dataset.parents[spanid];
       result.push(dataset.items.get(parentid));
       spanid = parentid;
     } else {
@@ -64,7 +66,7 @@ function getParents(dataset, spanid) {
 }
 
 function getChilds(dataset, spanid, childs) {
-  for (let cid of dataset.childs[spanid]) {
+  for (const cid of dataset.childs[spanid]) {
     childs.push(dataset.items.get(cid));
     getChilds(dataset, cid, childs);
   }
@@ -79,7 +81,7 @@ const spanData = document.getElementById("spandata");
 
 // timeline element clicked
 timelineContainer.addEventListener("click", (event) => {
-  let props = timeline.getEventProperties(event);
+  const props = timeline.getEventProperties(event);
 
   // remove all parent highlights
   dataset.items.forEach((item) => {
@@ -88,17 +90,17 @@ timelineContainer.addEventListener("click", (event) => {
 
   if (props.item != null) {
     // display span data
-    let item = dataset.items.get(props.item);
+    const item = dataset.items.get(props.item);
     spanData.innerHTML = item.title;
 
     // highlight parents and childs
-    let parents = getParents(dataset, item.id);
-    for (let parent of parents) {
+    const parents = getParents(dataset, item.id);
+    for (const parent of parents) {
       dataset.items.updateOnly({id: parent.id, className: "hi"});
     }
-    let childs = [];
+    const childs = [];
     getChilds(dataset, item.id, childs);
-    for (let child of childs) {
+    for (const child of childs) {
       dataset.items.updateOnly({id: child.id, className: "hi"});
     }
   } else {
@@ -111,7 +113,7 @@ fileSelector.addEventListener("change", (event) => {
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
     timelineContainer.innerHTML = "";
-    let dataJson = JSON.parse(event.target.result);
+    const dataJson = JSON.parse(event.target.result);
     dataset = createDataSet(dataJson);
     timeline = new vis.Timeline(
       timelineContainer,
