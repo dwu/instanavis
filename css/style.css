@@ -17,9 +17,15 @@ div#spandata {
     page-break-inside: avoid;
     word-wrap: break-word;
 }
+.vis-item {
+    font-size: 14px;
+}
 .vis-item.hi {
     background-color: #fff785;
     border-color: #ffc200;
+}
+.vis-item .vis-item-content {
+    padding: 2px;
 }
 footer {
     text-align: right;
