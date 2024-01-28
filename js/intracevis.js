@@ -117,7 +117,6 @@ var dataset;
 
 const timelineContainer = document.getElementById("timeline");
 const fileSelector = document.getElementById("fileselector");
-const dropZone = document.getElementById("dropzone");
 const spanData = document.getElementById("spandata");
 
 // timeline element clicked
@@ -175,18 +174,3 @@ fileSelector.value = null;
 fileSelector.addEventListener("change", (event) => {
   readFile(event.target.files[0]);
 });
-
-// drag & drop
-dropzone.addEventListener("dragenter", (event) => {
-  event.stopPropagation();
-  event.preventDefault();
-}, false);
-dropzone.addEventListener("dragover", (event) => {
-  event.stopPropagation();
-  event.preventDefault();
-} , false);
-dropzone.addEventListener("drop", (event) => {
-  event.stopPropagation();
-  event.preventDefault();
-  readFile(event.dataTransfer.files[0]);
-}, false);
