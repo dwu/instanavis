@@ -151,6 +151,7 @@ timelineContainer.addEventListener("click", (event) => {
 
 
 // file uploaded
+fileSelector.value = null;
 fileSelector.addEventListener("change", (event) => {
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
