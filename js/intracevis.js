@@ -117,6 +117,7 @@ var dataset;
 
 const timelineContainer = document.getElementById("timeline");
 const fileSelector = document.getElementById("fileselector");
+const dropZone = document.getElementById("dropzone");
 const spanData = document.getElementById("spandata");
 
 // timeline element clicked
@@ -149,13 +150,11 @@ timelineContainer.addEventListener("click", (event) => {
   }
 });
 
-
-// file uploaded
-fileSelector.value = null;
-fileSelector.addEventListener("change", (event) => {
+function readFile(file) {
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
     timelineContainer.innerHTML = "";
+
     const dataJson = JSON.parse(event.target.result);
 
     dataset = createDataSet(dataJson);
@@ -168,5 +167,26 @@ fileSelector.addEventListener("change", (event) => {
       });
     timeline.setGroups(dataset.groups);
   });
-  reader.readAsText(event.target.files[0]);
+  reader.readAsText(file);
+}
+
+// file uploaded
+fileSelector.value = null;
+fileSelector.addEventListener("change", (event) => {
+  readFile(event.target.files[0]);
 });
+
+// drag & drop
+dropzone.addEventListener("dragenter", (event) => {
+  event.stopPropagation();
+  event.preventDefault();
+}, false);
+dropzone.addEventListener("dragover", (event) => {
+  event.stopPropagation();
+  event.preventDefault();
+} , false);
+dropzone.addEventListener("drop", (event) => {
+  event.stopPropagation();
+  event.preventDefault();
+  readFile(event.dataTransfer.files[0]);
+}, false);
