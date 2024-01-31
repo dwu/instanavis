@@ -99,7 +99,17 @@ function readFile(file) {
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
     const dataJson = JSON.parse(event.target.result);
-    csvData.innerHTML = createCsv(dataJson).join("\n");
+    const data = createCsv(dataJson);
+    csvData.innerHTML = data.join("\n");
+
+    // create download link
+    const downloadLink = document.createElement("a");
+    var blob = new Blob([data.join("\n")], {type: "text/csv"});
+    var url = URL.createObjectURL(blob)
+    downloadLink.textContent = "Download CSV";
+    downloadLink.setAttribute('href', url)
+    downloadLink.setAttribute('download', `${file.name}.csv`)
+    csvData.parentNode.insertBefore(downloadLink, csvData);
   });
   reader.readAsText(file);
 }
