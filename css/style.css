@@ -29,7 +29,8 @@ div#spandata {
 }
 footer {
     text-align: right;
-    color: #ddd;
     font-style: italic;
     font-size: 0.8em;
+    padding-top: 0.5em;
+    border-top: 1px solid #ddd;
 }
