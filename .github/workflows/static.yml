@@ -28,7 +28,7 @@ jobs:
         with:
           find: "%%%LAST_MODIFIED%%%"
           replace: "${{github.event.head_commit.timestamp}}"
-          include: "index.html"
+          include: "*.html"
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
