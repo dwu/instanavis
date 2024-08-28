@@ -1,3 +1,5 @@
+import { readFileAsString } from "./utils.js";
+
 function createDataSet(dataJson) {
   const items = new vis.DataSet();
   const groups = new vis.DataSet();
@@ -34,7 +36,7 @@ function createDataSet(dataJson) {
 
   // iterate levels
   let level = 0;
-  for (; ;) {
+  while (true) {
     // create group for level
     groups.add({
       id: level,
@@ -148,22 +150,6 @@ timelineContainer.addEventListener("click", (event) => {
     spanData.innerHTML = "";
   }
 });
-
-function readFileAsString(file) {
-  const temporaryFileReader = new FileReader();
-
-  return new Promise((resolve, reject) => {
-    temporaryFileReader.onerror = () => {
-      temporaryFileReader.abort();
-      reject(new DOMException("Problem parsing input file."));
-    };
-
-    temporaryFileReader.onload = () => {
-      resolve(temporaryFileReader.result);
-    };
-    temporaryFileReader.readAsText(file);
-  });
-}
 
 async function readFiles(files) {
   spansById.clear();

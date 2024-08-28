@@ -1,3 +1,5 @@
+import { readFileAsString } from "./utils.js";
+
 function createCsv(spanItems) {
   const rows = new Array();
 
@@ -53,7 +55,7 @@ function createCsv(spanItems) {
 
   // iterate levels
   let level = 0;
-  for (;;) {
+  while (true) {
     // iterate element of current level
     for (let item of currentLevel) {
       rows.push([
@@ -95,25 +97,7 @@ let data = [];
 let spanItems = [];
 const spansById = new Map();
 
-const timelineContainer = document.getElementById("timeline");
 const fileSelector = document.getElementById("fileselector");
-const csvData = document.getElementById("csvdata");
-
-function readFileAsString(file) {
-  const temporaryFileReader = new FileReader();
-
-  return new Promise((resolve, reject) => {
-    temporaryFileReader.onerror = () => {
-      temporaryFileReader.abort();
-      reject(new DOMException("Problem parsing input file."));
-    };
-
-    temporaryFileReader.onload = () => {
-      resolve(temporaryFileReader.result);
-    };
-    temporaryFileReader.readAsText(file);
-  });
-}
 
 async function readFiles(files) {
   spansById.clear();
@@ -130,23 +114,17 @@ async function readFiles(files) {
 
   // create download link
   const downloadLink = document.createElement("a");
-  downloadLink.setAttribute("id", "download");
   var blob = new Blob([data.join("\n")], { type: "text/csv" });
   var url = URL.createObjectURL(blob)
   downloadLink.textContent = "Download CSV";
   downloadLink.setAttribute("href", url)
   downloadLink.setAttribute("download", `${files[0].name}.csv`)
-  csvData.parentNode.insertBefore(downloadLink, csvData);
+  document.getElementById("download").appendChild(downloadLink);
 }
 
 // file uploaded
 fileSelector.value = null;
 fileSelector.addEventListener("change", (event) => {
-  csvData.innerHTML = "";
-  const downloadLink = document.getElementById("download");
-  if (downloadLink != null) {
-    downloadLink.remove();
-  }
-
+  document.getElementById("download").innerHTML = "";
   readFiles(event.target.files);
 });
