@@ -47,7 +47,7 @@ function createCsv(spanItems) {
     "servicelabel",
     "endpointid",
     "endpointlabel",
-    "endpointtype",
+    "endpoint",
     "duration",
     "minSelfTime",
     "networkTime",

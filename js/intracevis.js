@@ -89,11 +89,11 @@ function dataToTitle(data) {
 }
 
 function getParents(itemid) {
-  const result = [];
-  for (; ;) {
+  const result = new Set();
+  while (true) {
     const item = spansById.get(itemid);
     if (item !== undefined && item.parent !== undefined) {
-      result.push(item.parent);
+      result.add(item.parent);
       itemid = item.parent.id;
     } else {
       break;
@@ -106,7 +106,7 @@ function getChilds(itemid, childs) {
   const item = spansById.get(itemid);
   if (item !== undefined && item.children.length > 0) {
     for (const c of item.children) {
-      childs.push(c);
+      childs.add(c);
     }
     for (const c of item.children) {
       getChilds(c.id, childs);
@@ -141,8 +141,8 @@ timelineContainer.addEventListener("click", (event) => {
     for (const parent of parents) {
       dataset.items.updateOnly({ id: parent.id, className: "hi" });
     }
-    console.log(parents);
-    const childs = [];
+
+    const childs = new Set();
     getChilds(item.id, childs);
     for (const child of childs) {
       dataset.items.updateOnly({ id: child.id, className: "hi" });
