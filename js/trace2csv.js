@@ -8,21 +8,22 @@ function createCsv(spanItems) {
     spansById.set(t.id, t);
   }
 
-  // link parent object
+  // link parent and child objects
   for (const [_, t] of spansById.entries()) {
+    t.children = new Array();
     t.parent = spansById.get(t.parentId);
   }
 
-  // link child items
   for (const [_, t] of spansById.entries()) {
-    t.children = new Array();
-    for (const [_, tc] of spansById.entries()) {
-      if (tc.parentId == t.id && tc.id != t.id) {
-        t.children.push(tc);
-      }
+    const parent = spansById.get(t.parentId);
+    if (parent != null) {
+      parent.children.push(t);
     }
+  }
+
+  for (const [_, t] of spansById.entries()) {
     t.children = t.children.sort((a, b) => a - b);
-  };
+  }
 
   // fill root level
   let nextLevel = new Array();
