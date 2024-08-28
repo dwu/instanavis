@@ -1,8 +1,8 @@
-function createCsv(dataJson) {
+function createCsv(spanItems) {
   const rows = new Array();
 
   // index by id
-  for (const t of dataJson.items) {
+  for (const t of spanItems) {
     spansById.set(t.id, t);
   }
 
@@ -91,30 +91,52 @@ function createCsv(dataJson) {
   return rows;
 }
 
+let data = [];
+let spanItems = [];
 const spansById = new Map();
 
 const timelineContainer = document.getElementById("timeline");
 const fileSelector = document.getElementById("fileselector");
 const csvData = document.getElementById("csvdata");
 
-function readFile(file) {
-  const reader = new FileReader();
-  reader.addEventListener("load", (event) => {
-    const dataJson = JSON.parse(event.target.result);
-    const data = createCsv(dataJson);
-    csvData.innerHTML = data.join("\n");
+function readFileAsString(file) {
+  const temporaryFileReader = new FileReader();
 
-    // create download link
-    const downloadLink = document.createElement("a");
-    downloadLink.setAttribute("id", "download");
-    var blob = new Blob([data.join("\n")], { type: "text/csv" });
-    var url = URL.createObjectURL(blob)
-    downloadLink.textContent = "Download CSV";
-    downloadLink.setAttribute("href", url)
-    downloadLink.setAttribute("download", `${file.name}.csv`)
-    csvData.parentNode.insertBefore(downloadLink, csvData);
+  return new Promise((resolve, reject) => {
+    temporaryFileReader.onerror = () => {
+      temporaryFileReader.abort();
+      reject(new DOMException("Problem parsing input file."));
+    };
+
+    temporaryFileReader.onload = () => {
+      resolve(temporaryFileReader.result);
+    };
+    temporaryFileReader.readAsText(file);
   });
-  reader.readAsText(file);
+}
+
+async function readFiles(files) {
+  spansById.clear();
+  spanItems.length = 0;
+  data.length = 0;
+
+  // process file contents
+  for (const file of files) {
+    let content = await readFileAsString(file);
+    const spans = JSON.parse(content);
+    spanItems = spanItems.concat(spans.items)
+    data = createCsv(spanItems);
+  }
+
+  // create download link
+  const downloadLink = document.createElement("a");
+  downloadLink.setAttribute("id", "download");
+  var blob = new Blob([data.join("\n")], { type: "text/csv" });
+  var url = URL.createObjectURL(blob)
+  downloadLink.textContent = "Download CSV";
+  downloadLink.setAttribute("href", url)
+  downloadLink.setAttribute("download", `${files[0].name}.csv`)
+  csvData.parentNode.insertBefore(downloadLink, csvData);
 }
 
 // file uploaded
@@ -126,5 +148,5 @@ fileSelector.addEventListener("change", (event) => {
     downloadLink.remove();
   }
 
-  readFile(event.target.files[0]);
+  readFiles(event.target.files);
 });

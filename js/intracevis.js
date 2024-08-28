@@ -149,15 +149,32 @@ timelineContainer.addEventListener("click", (event) => {
   }
 });
 
-function readFile(file) {
-  const reader = new FileReader();
-  reader.addEventListener("load", (event) => {
-    const dataJson = JSON.parse(event.target.result);
+function readFileAsString(file) {
+  const temporaryFileReader = new FileReader();
 
-    spansById.clear();
-    timelineContainer.innerHTML = "";
+  return new Promise((resolve, reject) => {
+    temporaryFileReader.onerror = () => {
+      temporaryFileReader.abort();
+      reject(new DOMException("Problem parsing input file."));
+    };
 
-    dataset = createDataSet(dataJson);
+    temporaryFileReader.onload = () => {
+      resolve(temporaryFileReader.result);
+    };
+    temporaryFileReader.readAsText(file);
+  });
+}
+
+async function readFiles(files) {
+  spansById.clear();
+  timelineContainer.innerHTML = "";
+
+  // process file contents
+  for (const file of files) {
+    let content = await readFileAsString(file);
+    const spans = JSON.parse(content);
+
+    dataset = createDataSet(spans);
     timeline = new vis.Timeline(
       timelineContainer,
       dataset.items,
@@ -166,12 +183,11 @@ function readFile(file) {
         "xss": { "disabled": true }
       });
     timeline.setGroups(dataset.groups);
-  });
-  reader.readAsText(file);
+  }
 }
 
 // file uploaded
 fileSelector.value = null;
 fileSelector.addEventListener("change", (event) => {
-  readFile(event.target.files[0]);
+  readFiles(event.target.files);
 });
