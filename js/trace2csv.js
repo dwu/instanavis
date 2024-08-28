@@ -106,11 +106,12 @@ function readFile(file) {
 
     // create download link
     const downloadLink = document.createElement("a");
-    var blob = new Blob([data.join("\n")], {type: "text/csv"});
+    downloadLink.setAttribute("id", "download");
+    var blob = new Blob([data.join("\n")], { type: "text/csv" });
     var url = URL.createObjectURL(blob)
     downloadLink.textContent = "Download CSV";
-    downloadLink.setAttribute('href', url)
-    downloadLink.setAttribute('download', `${file.name}.csv`)
+    downloadLink.setAttribute("href", url)
+    downloadLink.setAttribute("download", `${file.name}.csv`)
     csvData.parentNode.insertBefore(downloadLink, csvData);
   });
   reader.readAsText(file);
@@ -119,5 +120,11 @@ function readFile(file) {
 // file uploaded
 fileSelector.value = null;
 fileSelector.addEventListener("change", (event) => {
+  csvData.innerHTML = "";
+  const downloadLink = document.getElementById("download");
+  if (downloadLink != null) {
+    downloadLink.remove();
+  }
+
   readFile(event.target.files[0]);
 });

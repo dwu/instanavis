@@ -152,9 +152,10 @@ timelineContainer.addEventListener("click", (event) => {
 function readFile(file) {
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
-    timelineContainer.innerHTML = "";
-
     const dataJson = JSON.parse(event.target.result);
+
+    spansById.clear();
+    timelineContainer.innerHTML = "";
 
     dataset = createDataSet(dataJson);
     timeline = new vis.Timeline(
