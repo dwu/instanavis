@@ -48,7 +48,7 @@ function handleItem(item) {
 
     return {
         id: item.id,
-        name: `${item.name} (${item.id})`,
+        name: `${item.name}`,
         value: item.duration,
         service_label: item.destination?.service?.label,
         endpoint_label: item.destination?.endpoint?.label,
