@@ -114,7 +114,7 @@ async function readFiles(files) {
   chart.setDetailsElement(chartDetails);
 
   var tip = d3.tip()
-    .direction("s")
+    .direction("ne")
     .offset([8, 0])
     .attr('class', 'd3-flame-graph-tip')
     .html(function (d) {
