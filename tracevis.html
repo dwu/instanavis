@@ -1,16 +1,32 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Trace Visualizer</title>
-        <script src="js/vis-timeline-graph2d.min.js"></script>
-        <link rel="stylesheet" href="css/style.css">
-        <link rel="icon" type="image/x-icon" href="favicon.ico">
-    </head>
-    <body>
-        <p>Upload Instana trace file (.json): <input type="file" id="fileselector" multiple></input></p>
-        <p>Trace:<br><div id="timeline"></div></p>
-        <p>Span data:<br><div id="spandata"></div></p>
-        <footer><a href="trace2csv.html">Go to Trace2CSV Converter</a> | Last modified: %%%LAST_MODIFIED%%%</footer>
-        <script src="js/intracevis.js" type="module"></script>
-    </body>
+
+<head>
+    <title>Trace Visualizer</title>
+
+    <script src="js/d3.v5.min.js"></script>
+    <script type="text/javascript" src=js/d3-tip.min.js></script>
+    <script type="text/javascript" src="js/d3-flamegraph.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/d3-flamegraph.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+    <p>Upload Instana trace file (.json): <input type="file" id="fileselector" multiple></input></p>
+    <div>
+        <form id="form">
+            <input type="text" id="term">
+            <a href="#" id="search">Search</a> | <a href="#" id="clear">Clear search</a> | <a href="#" id="reset">Reset zoom</a>
+        </form>
+        <br>
+        <div id="chart"></div>
+        <div id="details"></div>
+    </div>
+    <footer><a href="trace2csv.html">Go to Trace2CSV Converter</a> | Last modified: %%%LAST_MODIFIED%%%</footer>
+    <script src="js/intracevis.js" type="module"></script>
+</body>
+
 </html>

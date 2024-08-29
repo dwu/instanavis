@@ -1,11 +1,8 @@
 import { readFileAsString } from "./utils.js";
 
-function createDataSet(dataJson) {
-  const items = new vis.DataSet();
-  const groups = new vis.DataSet();
-
+function createDataSet(spanItems) {
   // index by id
-  for (const t of dataJson.items) {
+  for (const t of spanItems) {
     spansById.set(t.id, t);
   }
 
@@ -26,155 +23,123 @@ function createDataSet(dataJson) {
     t.children = t.children.sort((a, b) => a - b);
   }
 
+
   // fill root level
-  let nextLevel = new Array();
-  let currentLevel = new Array();
+  const roots = []
   for (const [_, t] of spansById.entries()) {
     if (t.parent === undefined) {
-      currentLevel.push(t);
+      roots.push(t);
     }
   }
-
-  // iterate levels
-  let level = 0;
-  while (true) {
-    // create group for level
-    groups.add({
-      id: level,
-      content: level
-    });
-
-    // iterate element of current level
-    for (let item of currentLevel) {
-      let data = {};
-      data["id"] = item.id;
-      data["parentid"] = item.parentId;
-      data["name"] = item.name;
-      data["timestamp"] = item.timestamp;
-      data["service"] = item.destination.service.label;
-      data["endpoint"] = item.destination.endpoint.label != "" ? `[${item.destination.endpoint.type}] ${item.destination.endpoint.label}` : `[${item.destination.endpoint.type}]`;
-      data["duration"] = `${item.duration} ms`;
-      data["minSelfTime"] = `${item.minSelfTime} ms`;
-      data["networkTime"] = item.networkTime == null ? `-` : `${item.networkTime} ms`;
-
-      items.add({
-        id: item.id,
-        group: level,
-        content: item.name != null ? `[${item.destination.service.label}] ${item.name}` : `[${item.destination.service.label}]`,
-        title: dataToTitle(data),
-        start: item.timestamp,
-        end: item.timestamp + item.duration
-      });
-
-      nextLevel = nextLevel.concat(item.children);
-    }
-
-    if (nextLevel.length == 0) {
-      break;
-    }
-
-    currentLevel.length = 0;
-    currentLevel = currentLevel.concat(nextLevel);
-    nextLevel.length = 0;
-
-    level += 1;
+  const data = {};
+  data.children = [];
+  for (const item of roots) {
+    data.children.push(handleItem(item));
   }
 
-  return { items, groups };
+  return data;
 }
 
+function handleItem(item) {
+  const childData = [];
+  for (let child of item.children) {
+    childData.push(handleItem(child));
+  }
 
-function dataToTitle(data) {
-  return JSON.stringify(data, null, 2).replace(/\n/g, "<br>");
+  return {
+    id: item.id,
+    name: `${item.name} (${item.id})`,
+    value: item.duration,
+    service_label: item.destination?.service?.label,
+    endpoint_label: item.destination?.endpoint?.label,
+    endpoint_type: item.destination?.endpoint?.type,
+    children: childData
+  }
 }
 
-function getParents(itemid) {
-  const result = new Set();
-  while (true) {
-    const item = spansById.get(itemid);
-    if (item !== undefined && item.parent !== undefined) {
-      result.add(item.parent);
-      itemid = item.parent.id;
-    } else {
-      break;
-    }
+function search() {
+  const term = document.getElementById("term").value;
+
+  if (chart !== undefined) {
+    chart.search(term);
   }
-  return result;
 }
 
-function getChilds(itemid, childs) {
-  const item = spansById.get(itemid);
-  if (item !== undefined && item.children.length > 0) {
-    for (const c of item.children) {
-      childs.add(c);
-    }
-    for (const c of item.children) {
-      getChilds(c.id, childs);
-    }
+function clear() {
+  document.getElementById("term").value = "";
+
+  if (chart !== undefined) {
+    chart.clear();
   }
+}
+
+function resetZoom() {
+  if (chart !== undefined) {
+    chart.resetZoom();
+  }
+}
+
+function onClick(d) {
+  console.info("Clicked on " + d.data.name);
 }
 
 const spansById = new Map();
-var timeline;
-var dataset;
-
-const timelineContainer = document.getElementById("timeline");
 const fileSelector = document.getElementById("fileselector");
-const spanData = document.getElementById("spandata");
-
-// timeline element clicked
-timelineContainer.addEventListener("click", (event) => {
-  const props = timeline.getEventProperties(event);
-
-  // remove all highlights
-  dataset.items.forEach((item) => {
-    dataset.items.updateOnly({ id: item.id, className: null });
-  });
-
-  if (props.item != null) {
-    // display span data
-    const item = dataset.items.get(props.item);
-    spanData.innerHTML = item.title;
-
-    // highlight parents and childs
-    const parents = getParents(item.id);
-    for (const parent of parents) {
-      dataset.items.updateOnly({ id: parent.id, className: "hi" });
-    }
-
-    const childs = new Set();
-    getChilds(item.id, childs);
-    for (const child of childs) {
-      dataset.items.updateOnly({ id: child.id, className: "hi" });
-    }
-  } else {
-    spanData.innerHTML = "";
-  }
-});
+var chart;
+const chartDetails = document.getElementById("details");
 
 async function readFiles(files) {
+  let spanItems = [];
   spansById.clear();
-  timelineContainer.innerHTML = "";
 
   // process file contents
   for (const file of files) {
     let content = await readFileAsString(file);
     const spans = JSON.parse(content);
-
-    dataset = createDataSet(spans);
-    timeline = new vis.Timeline(
-      timelineContainer,
-      dataset.items,
-      {
-        "orientation": "top",
-        "xss": { "disabled": true }
-      });
-    timeline.setGroups(dataset.groups);
+    spanItems = spanItems.concat(spans.items);
   }
+
+  let dataset = createDataSet(spanItems);
+
+  chart = d3.flamegraph()
+    .width(1500)
+    .cellHeight(20)
+    .transitionDuration(250)
+    .minFrameSize(0)
+    .transitionEase(d3.easeCubic)
+    .sort(true)
+    .onClick(onClick)
+    .differential(false)
+    .selfValue(false);
+  chart.setDetailsElement(chartDetails);
+
+  var tip = d3.tip()
+    .direction("s")
+    .offset([8, 0])
+    .attr('class', 'd3-flame-graph-tip')
+    .html(function (d) {
+      return `<b>id</b>: ${d.data.id}<br><b>name</b>: ${d.data.name}<br><b>service label</b>: ${d.data.service_label !== undefined ? d.data.service_label : "-"}<br><b>endpoint label</b>: ${d.data.endpoint_label !== undefined ? d.data.endpoint_label : "-"}<br><b>endpoint type</b>: ${d.data.endpoint_type !== undefined ? d.data.endpoint_type : "-"}`;
+    });
+  chart.tooltip(tip);
+
+  d3.select("#chart")
+    .datum(dataset)
+    .call(chart);
 }
 
 // file uploaded
 fileSelector.value = null;
 fileSelector.addEventListener("change", (event) => {
+  chart = undefined;
+  document.getElementById("chart").innerHTML = "";
   readFiles(event.target.files);
 });
+
+document.getElementById("form").addEventListener("submit", function (event) {
+  event.preventDefault();
+  search();
+});
+
+document.getElementById("search").addEventListener("click", search);
+document.getElementById("clear").addEventListener("click", clear);
+document.getElementById("reset").addEventListener("click", resetZoom);
