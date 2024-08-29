@@ -110,8 +110,9 @@ async function readFiles(files) {
     let content = await readFileAsString(file);
     const spans = JSON.parse(content);
     spanItems = spanItems.concat(spans.items)
-    data = createCsv(spanItems);
   }
+
+  data = createCsv(spanItems);
 
   // create download link
   const downloadLink = document.createElement("a");
