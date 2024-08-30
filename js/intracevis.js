@@ -31,8 +31,12 @@ function createDataSet(spanItems) {
             roots.push(t);
         }
     }
-    const data = {};
-    data.children = [];
+    const data = {
+        "id": "root",
+        "name": "root",
+        "value": 0,
+        "children": []
+    };
     for (const item of roots) {
         data.children.push(handleItem(item));
     }
@@ -101,27 +105,24 @@ async function readFiles(files) {
 
     let dataset = createDataSet(spanItems);
 
-    chart = d3.flamegraph()
+    chart = flamegraph()
         .width(1500)
-        .cellHeight(20)
+        .cellHeight(18)
         .transitionDuration(250)
         .minFrameSize(0)
         .transitionEase(d3.easeCubic)
         .sort(true)
         .onClick(onClick)
-        .differential(false)
         .selfValue(false);
     chart.setDetailsElement(chartDetails);
 
-    var tip = d3.tip()
-        .direction("ne")
-        .offset([8, 0])
-        .attr('class', 'd3-flame-graph-tip')
-        .html(function(d) {
-            return `<b>id</b>: ${d.data.id}<br><b>name</b>: ${d.data.name}<br><b>service label</b>: ${d.data.service_label !== undefined ? d.data.service_label : "-"}<br><b>endpoint label</b>: ${d.data.endpoint_label !== undefined ? d.data.endpoint_label : "-"}<br><b>endpoint type</b>: ${d.data.endpoint_type !== undefined ? d.data.endpoint_type : "-"}`;
+    var tip = flamegraph.tooltip.defaultFlamegraphTooltip()
+        .html(function (d) {
+            return `<b>id</b>: ${d.data.id}<br><b>name</b>: ${d.data.name}<br><b>duration</b>: ${d.data.value}<br><b>service label</b>: ${d.data.service_label !== undefined ? d.data.service_label : "-"}<br><b>endpoint label</b>: ${d.data.endpoint_label !== undefined ? d.data.endpoint_label : "-"}<br><b>endpoint type</b>: ${d.data.endpoint_type !== undefined ? d.data.endpoint_type : "-"}`;
         });
     chart.tooltip(tip);
 
+    console.log(dataset);
     d3.select("#chart")
         .datum(dataset)
         .call(chart);
@@ -135,7 +136,7 @@ fileSelector.addEventListener("change", (event) => {
     readFiles(event.target.files);
 });
 
-document.getElementById("form").addEventListener("submit", function(event) {
+document.getElementById("form").addEventListener("submit", function (event) {
     event.preventDefault();
     search();
 });
