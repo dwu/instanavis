@@ -87,6 +87,21 @@ function onClick(d) {
     console.info("Clicked on " + d.data.name);
 }
 
+function searchMatch(span, term) {
+    if (!term) {
+        return false;
+    }
+
+    let label = span.data.name;
+    if (document.getElementById("ignorecase").checked) {
+        term = term.toLowerCase()
+        label = label.toLowerCase()
+    }
+
+    const re = new RegExp(term);
+    return typeof label !== 'undefined' && label && label.match(re);
+}
+
 const spansById = new Map();
 const fileSelector = document.getElementById("fileselector");
 var chart;
@@ -115,6 +130,7 @@ async function readFiles(files) {
         .onClick(onClick)
         .selfValue(false);
     chart.setDetailsElement(chartDetails);
+    chart.setSearchMatch(searchMatch);
 
     var tip = flamegraph.tooltip.defaultFlamegraphTooltip()
         .html(function (d) {
@@ -122,7 +138,6 @@ async function readFiles(files) {
         });
     chart.tooltip(tip);
 
-    console.log(dataset);
     d3.select("#chart")
         .datum(dataset)
         .call(chart);
